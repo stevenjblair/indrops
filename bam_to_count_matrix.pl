@@ -63,10 +63,16 @@ main: {
     if ($bam_file =~ /\.sam$/) {
         open($fh, $bam_file) or die "Error, cannot open file $bam_file";
     }
+    elsif ($bam_file =~ /\.sam\.gz$/) {
+        open($fh, "gunzip -c $bam_file | ") or die "Error, couldn't open gunzip -c $bam_file";
+    }
     elsif ($bam_file =~ /\.bam$/) {
         open($fh, "samtools view $bam_file |") or die "Error, cannot samtools view $bam_file";
     }
-
+    else {
+        die "Error, dont recognize file type: $bam_file";
+    }
+    
     my %read_to_target;
     my %gene_to_cell;
     
