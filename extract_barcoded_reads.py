@@ -568,7 +568,7 @@ class IndropsLibrary():
                 for line in part.get_reads_for_barcode(barcode):
                     yield line
 
-    def quantify_expression(self, analysis_prefix='', min_reads=750, min_counts=0, total_workers=1, worker_index=0, no_bam=False, run_filter=[]):
+    def quantify_expression(self, analysis_prefix='', min_reads=750, min_counts=0, total_workers=1, worker_index=0, no_bam=False, run_filter=[], library=None):
         if analysis_prefix:
             analysis_prefix += '.'
 
@@ -708,7 +708,7 @@ class IndropsLibrary():
                 counts_output_filename, metrics_output_filename,
                 ambig_counts_output_filename, ambig_partners_output_filename,
                 no_bam=no_bam, write_header=(not header_written) and (worker_index==0), analysis_prefix=analysis_prefix,
-                min_counts = min_counts, run_filter=run_filter)
+                min_counts = min_counts, run_filter=run_filter, library=library)
             header_written = True
         print_to_stderr("Per barcode quantification completed.")
 
@@ -749,10 +749,10 @@ class IndropsLibrary():
 
     def quantify_expression_for_barcode(self, barcode, counts_output_filename, metrics_output_filename,
             ambig_counts_output_filename, ambig_partners_output_filename,
-            min_counts=0, analysis_prefix='', no_bam=False, write_header=False, run_filter=[]):
+            min_counts=0, analysis_prefix='', no_bam=False, write_header=False, run_filter=[], library=None):
         print_to_stderr(('{0:<14.12}'.format(analysis_prefix) if analysis_prefix else '') + '{0:<14.12}{1:<9}'.format(self.name, barcode), False)
 
-        sys.stderr.write("\n\n\nBarcode: {}\n".format(barcode))
+        sys.stderr.write("\n\n\nBarcode: {}, Library: {}\n".format(barcode, library))
         
         unaligned_reads_output = os.path.join(self.paths.quant_dir, '%s%s.unaligned.fastq' % (analysis_prefix,barcode))
         aligned_bam = os.path.join(self.paths.quant_dir, '%s%s.aligned.bam' % (analysis_prefix,barcode))
@@ -819,9 +819,23 @@ class IndropsLibrary():
                 sys.stderr.write("\r{} ".format(counter/4))
             #p1.stdin.write(line)
             reads_ofh.write(line)
+            #print("LINE: {} ---".format(line))
+            # add barcode to read
+            if counter % 4 == 1:
+                # first line of the record
+                # add the barcode
+                
+                (line, nreps) = re.subn("^@", "@{}-{}-".format(library,barcode), line, 1)
+                if nreps != 1:
+                    raise RuntimeError("Error, didnt recognize beginning of read sequence for {}".format(line))
+            sys.stdout.write(line)
+        
 
         sys.stderr.write("\nbarcode: {}  has {} reads\n".format(barcode, counter))
         reads_ofh.close()
+
+        return ## SHORTCIRCUIT HERE.... JUST WANT THE BARCODED READS
+
         
         bowtie_cmd.append(reads_filename)
 
@@ -1708,7 +1722,7 @@ if __name__=="__main__":
             project.libraries[library].quantify_expression(worker_index=args.worker_index, total_workers=args.total_workers,
                     min_reads=args.min_reads, min_counts=args.min_counts,
                     analysis_prefix=args.analysis_prefix,
-                    no_bam=args.no_bam, run_filter=target_runs)
+                    no_bam=args.no_bam, run_filter=target_runs, library=library)
 
             for part in project.libraries[library].parts:
                 if hasattr(part, '_sorted_index'):
