@@ -8,12 +8,17 @@ use Getopt::Long qw(:config posix_default no_ignore_case bundling pass_through);
 
 my $help_flag;
 
+my $min_reads = 750;
+
 my $usage = <<__EOUSAGE__;
 
 #######################################
 #
 #  --bam <string>        bam file
 #
+#  optional:
+#
+#  --min_reads <int>     default: $min_reads
 #
 #######################################
 
@@ -27,6 +32,7 @@ my $bam_file;
 
 &GetOptions ( 'h' => \$help_flag,
               'bam=s' => \$bam_file,
+              'min_reads=i' => \$min_reads,
     );
 
 unless ($bam_file) {
@@ -85,10 +91,32 @@ main: {
             foreach my $hit (@hits) {
                 $gene_sample_counter{$hit}->{$sample_barcode}++;
             }
-            $cells{$sample_barcode} = 1;
+            $cells{$sample_barcode} += 1;
         }
     }
 
+    # remove cells w/ fewer than min_reads
+    {
+        my @remove_cells;
+
+        my $total_cells = 0;
+        foreach my $cell (keys %cells) {
+            $total_cells++;
+            my $num_reads = $cells{$cell};
+            if ($num_reads < $min_reads) {
+                push (@remove_cells, $cell);
+            }
+        }
+        my $num_removed = 0;
+        foreach my $cell (@remove_cells) {
+            delete $cells{$cell};
+            $num_removed++;
+        }
+
+        print STDERR "-removed $num_removed / $total_cells as below $min_reads read threshold\n";
+    }
+    
+    
     # output matrix
     {
         my @cells = sort keys %cells;
