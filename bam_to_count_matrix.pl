@@ -116,7 +116,8 @@ main: {
         print STDERR "-removed $num_removed / $total_cells as below $min_reads read threshold\n";
     }
     
-    
+
+    print STDERR "\n\nPrinting count matrix\n";
     # output matrix
     {
         my @cells = sort keys %cells;
