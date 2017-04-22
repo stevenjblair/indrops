@@ -10,6 +10,10 @@ my $help_flag;
 
 my $min_reads = 750;
 
+my $max_top_cells = 5000;
+my $min_cells_per_gene = 3;
+my $max_read_mappings = 10;
+
 my $usage = <<__EOUSAGE__;
 
 #######################################
@@ -19,6 +23,12 @@ my $usage = <<__EOUSAGE__;
 #  optional:
 #
 #  --min_reads <int>     default: $min_reads
+#
+#  --min_cells_per_gene <int>    default: $min_cells_per_gene
+#
+#  --max_top_cells <int>   restrict to top read count cells (0=no restriction) (default: $max_top_cells)
+#
+#  --max_read_mappings <int>      default: $max_read_mappings
 #
 #######################################
 
@@ -33,7 +43,14 @@ my $bam_file;
 &GetOptions ( 'h' => \$help_flag,
               'bam=s' => \$bam_file,
               'min_reads=i' => \$min_reads,
+              'min_cells_per_gene=i' => \$min_cells_per_gene,
+              'max_top_cells=i' => \$max_top_cells,
+              'max_read_mappings=i' => \$max_read_mappings,
     );
+
+if ($help_flag) {
+    die $usage;
+}
 
 unless ($bam_file) {
     die $usage;
@@ -51,7 +68,8 @@ main: {
     }
 
     my %read_to_target;
-
+    my %gene_to_cell;
+    
     {
         print STDERR "-parsing bam file\n";
         my $line_counter = 0;
@@ -72,6 +90,13 @@ main: {
             if ($hit_acc eq '*') { next; }
             
             $read_to_target{$read}->{$hit_acc} = 1;
+        
+
+            $read =~ /^(\w+-\w+)-/ or die "Error, cannot extract cell info from $read";
+            my $cell = $1;
+            $gene_to_cell{$hit_acc}->{$cell} = 1;
+            
+            
         }
         close $fh;
     }
@@ -86,7 +111,10 @@ main: {
         foreach my $read (keys %read_to_target) {
             my @hits = keys %{$read_to_target{$read}};
 
+            if (scalar @hits > $max_read_mappings) { next; }
+            
             my ($sample, $barcode, @rest) = split(/-/, $read);
+            $sample =~ s/_//; # seurat uses first _ for sample to cell delineation
             my $sample_barcode = "${sample}_${barcode}";
             foreach my $hit (@hits) {
                 $gene_sample_counter{$hit}->{$sample_barcode}++;
@@ -97,26 +125,34 @@ main: {
 
     # remove cells w/ fewer than min_reads
     {
-        my @remove_cells;
 
-        my $total_cells = 0;
-        foreach my $cell (keys %cells) {
-            $total_cells++;
+        my @all_cells = reverse sort { $cells{$a} <=> $cells{$b} } keys %cells;
+        my $total_cells = scalar @all_cells;
+        my @remove_cells;
+        if ($max_top_cells > 0 && scalar(@all_cells) > $max_top_cells) {
+            @remove_cells = @all_cells[$max_top_cells..$#all_cells];
+            @all_cells = @all_cells[0..($max_top_cells-1)];
+            print STDERR "-capturing just the top $max_top_cells / $total_cells total cells\n";
+        }
+
+        my $num_removed = 0;
+        foreach my $cell (@all_cells) {
             my $num_reads = $cells{$cell};
             if ($num_reads < $min_reads) {
                 push (@remove_cells, $cell);
+                $num_removed++;
             }
         }
-        my $num_removed = 0;
+        print STDERR "-removed an additional $num_removed cells due to not meeting $min_reads min reads cutoff.\n" if $num_removed;
+        
         foreach my $cell (@remove_cells) {
             delete $cells{$cell};
-            $num_removed++;
         }
-
-        print STDERR "-removed $num_removed / $total_cells as below $min_reads read threshold\n";
+        
+        
     }
     
-
+    
     print STDERR "\n\nPrinting count matrix\n";
     # output matrix
     {
@@ -125,16 +161,18 @@ main: {
         print "\t" . join("\t", @cells) . "\n";
         foreach my $gene (sort keys %gene_sample_counter) {
             my @vals = ($gene);
-            
+
+            my $num_cells_expr = 0;
             foreach my $cell (@cells) {
                 my $count = $gene_sample_counter{$gene}->{$cell} || 0;
                 push (@vals, $count);
+                if ($count) { $num_cells_expr++; }
             }
 
-            print join("\t", @vals) . "\n";
+            print join("\t", @vals) . "\n" if ($num_cells_expr >= $min_cells_per_gene);
         }
     }
-
+    
 
     exit(0);
 }
