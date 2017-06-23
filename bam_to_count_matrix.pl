@@ -32,6 +32,7 @@ my $usage = <<__EOUSAGE__;
 #
 #######################################
 
+
 __EOUSAGE__
 
     ;
@@ -73,8 +74,8 @@ main: {
         die "Error, dont recognize file type: $bam_file";
     }
     
-    my %read_to_target;
-    my %gene_to_cell;
+    my %read_to_target;  # read -> gene
+    my %gene_to_cell;    # gene -> cell
     
     {
         print STDERR "-parsing bam file\n";
@@ -94,7 +95,8 @@ main: {
             my $read = $x[0];
             my $hit_acc = $x[2];
             if ($hit_acc eq '*') { next; }
-            
+
+            # capture read to target gene mapping
             $read_to_target{$read}->{$hit_acc} = 1;
         
 
@@ -110,25 +112,49 @@ main: {
     
     print STDERR "\n\nBuilding count matrix\n";
 
+    # note, reads encode cell and UMI info.
+    
     my %gene_sample_counter;
     my %cells;
     
     {
+
+        my %hit_to_umi; # avoid multi-counting UMIs / gene.
+        
         foreach my $read (keys %read_to_target) {
             my @hits = keys %{$read_to_target{$read}};
 
+            # exclude those reads that map to too many target genes
             if (scalar @hits > $max_read_mappings) { next; }
+            
+            my $num_hits = scalar(@hits);
             
             my ($sample, $barcode, @rest) = split(/-/, $read);
             $sample =~ s/_//; # seurat uses first _ for sample to cell delineation
             my $sample_barcode = "${sample}_${barcode}";
+            
+            # get read UMI
+            my @pts = split(/:/, $read);
+            my $umi = $pts[1];
+            
             foreach my $hit (@hits) {
-                $gene_sample_counter{$hit}->{$sample_barcode}++;
+
+                # read umi is only counted once / cell
+                if (! $hit_to_umi{$hit}->{$umi}) {
+                    
+                    # split read among the multiple hits.
+                    $gene_sample_counter{$hit}->{$sample_barcode} += 1/$num_hits;
+                    $hit_to_umi{$hit}->{$umi} = 1;
+                }
             }
+
+            
+            # increment read/cell counter
             $cells{$sample_barcode} += 1;
         }
     }
-
+    
+    
     # remove cells w/ fewer than min_reads
     {
 
@@ -171,6 +197,9 @@ main: {
             my $num_cells_expr = 0;
             foreach my $cell (@cells) {
                 my $count = $gene_sample_counter{$gene}->{$cell} || 0;
+                if ($count > 0) {
+                    $count = sprintf("%.1f", $count);
+                }
                 push (@vals, $count);
                 if ($count) { $num_cells_expr++; }
             }
