@@ -1,0 +1,8 @@
+python ~/GITHUB/indrops/indrops.py project.yaml filter
+
+python ~/GITHUB/indrops/indrops.py project.yaml identify_abundant_barcodes
+
+python ~/GITHUB/indrops/extract_barcoded_reads.py project.yaml sort
+
+python ~/GITHUB/indrops/extract_barcoded_reads.py project.yaml quantify --no-bam > barcoded_reads.fastq
+
