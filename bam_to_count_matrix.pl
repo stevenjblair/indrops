@@ -94,16 +94,17 @@ main: {
             }
             
             my @x = split(/\t/);
-            my $read = $x[0];
-            my $hit_acc = $x[2];
+            my $read = $x[0];    # ex.   S1-bc1816-CAGTTTGC-ACACTAAG:GGATTTT:0
+            my $hit_acc = $x[2]; # ex.   c1072462_g3_i5|c1072462_g3_i5
             if ($hit_acc eq '*') { next; }
 
+            
             # capture read to target gene mapping
             $read_to_target{$read}->{$hit_acc} = 1;
         
 
             $read =~ /^(\w+-\w+)-/ or die "Error, cannot extract cell info from $read";
-            my $cell = $1;
+            my $cell = $1;  # ex. S1-bc1816
             $gene_to_cell{$hit_acc}->{$cell} = 1;
             
             
@@ -131,7 +132,7 @@ main: {
             
             my $num_hits = scalar(@hits);
             
-            my ($sample, $barcode, @rest) = split(/-/, $read);
+            my ($sample, $barcode, @rest) = split(/-/, $read);  # ex. S1-bc1816-CAGTTTGC-ACACTAAG:GGATTTT:0
             $sample =~ s/_//; # seurat uses first _ for sample to cell delineation
             my $sample_barcode = "${sample}_${barcode}";
             
