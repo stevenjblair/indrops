@@ -6,3 +6,10 @@ python ~/GITHUB/indrops/extract_barcoded_reads.py project.yaml sort
 
 python ~/GITHUB/indrops/extract_barcoded_reads.py project.yaml quantify --no-bam > barcoded_reads.fastq
 
+
+
+## note, must make the read name unique:
+
+     use encode_read_number_in_fastq.pl
+
+
