@@ -139,6 +139,8 @@ main: {
             # get read UMI
             my @pts = split(/:/, $read);
             my $umi = $pts[1];
+
+            $umi = "$sample_barcode-$umi"; # UMI is a cell-specific unique molecular identifier
             
             foreach my $hit (@hits) {
 
