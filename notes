@@ -10,6 +10,15 @@ python ~/GITHUB/indrops/extract_barcoded_reads.py project.yaml quantify --no-bam
 
 ## note, must make the read name unique:
 
-     use encode_read_number_in_fastq.pl
+encode_read_number_in_fastq.pl barcoded_reads.fastq > barcoded_reads.adj.fq
+
+# align reads to target transcripts using bowtie:
+
+bowtie target.fasta.bowtie -q -p 20 -a --best --strata --chunkmbs 1000 --sam -m 200 -n 1 -l 15 -e 100 barcoded_reads.adj.fq  >  target.bowtie.adj.sam
+
+
+# generate count matrix:
+
+bam_to_count_matrix.pl --bam target.bowtie.adj.sam > sc.counts.matrix
 
 

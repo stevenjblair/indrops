@@ -3,7 +3,8 @@
 use strict;
 use warnings;
 
-use lib ($ENV{EUK_MODULES});
+use FindBin;
+use lib ("$FindBin::Bin/PerlLib");
 use Fastq_reader;
 
 my $usage = "\n\n\tusage: $0 file.fq.gz\n\n";
