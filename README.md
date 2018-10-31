@@ -1,3 +1,5 @@
+** Note, this is forked from [https://github.com/indrops/indrops](https://github.com/indrops/indrops) ** and was modified for our use.
+
 ## Project YAML file.
 
 An inDrops project is composed of a series of sequencing runs, each including one (or several) indrops libraries within it. A sequencing run can further be split into several parts (effectively arbitrary chunks) to parallelize the analysis. Give example of a chunk
