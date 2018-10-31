@@ -113,49 +113,15 @@ The raw BCL files are needed for manual demultiplexing. Move the raw BCL files t
 
 ## Analysis steps
 
-### 0. Building a transcriptome bowtie index.
+### 0. Generate bowtie index from axolotl transcriptome
+The version of the transcriptome we used can be downloaded here:https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE121737&format=file&file=GSE121737%5FAxolotl%2ETrinity%2ECellReports2017%2Efasta%2Egz
 
-The index comprises a bowtie transcriptome index. It is built using RSEM so we can use `rsem-tbam2gbam` to convert between transcriptome and genome coordinates.
-The index also has an annotation of which locations are soft-masked (denoting low-complexity regions) to allow filtering of alignments primarily found in soft-masked regions.
-
-The index used by a project is give by `paths:bowtie_index` in the project YAML file. Several projects can share the same index. 
-Example:
-    paths : 
-      bowtie_index : "/path/to/index_dir/indrops_ensembl_GRCh38_rel85/Homo_sapiens.GRCh38.85.annotated"
-      ...more paths
-
-If no index exists, it needs to be built
-
-#### Example creation of a human index, using ENSEMBL release 85
-    mkdir -pv DOWNLOAD_DIR
-    cd DOWNLOAD_DIR
-
-    # Download the soft-masked, primary assembly Genome Fasta file
-    wget ftp://ftp.ensembl.org/pub/release-85/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
-
-    # Download the corresponding GTF file.
-    wget ftp://ftp.ensembl.org/pub/release-85/gtf/homo_sapiens/Homo_sapiens.GRCh38.85.gtf.gz
-    
-    # This command will go through all the steps for creating the index
-    python indrops.py project.yaml build_index \
-        --genome-fasta-gz DOWNLOAD_DIR/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz \
-        --ensembl-gtf-gz DOWNLOAD_DIR/Homo_sapiens.GRCh38.85.gtf.gz
-
-#### Example creation of a mouse index, using ENSEMBL release 85
-    mkdir -pv DOWNLOAD_DIR
-    cd DOWNLOAD_DIR
-
-    # Download the soft-masked, primary assembly Genome Fasta file
-    wget ftp://ftp.ensembl.org/pub/release-85/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz
-
-    # Download the corresponding GTF file.
-    wget ftp://ftp.ensembl.org/pub/release-85/gtf/mus_musculus/Mus_musculus.GRCm38.85.gtf.gz
-    
-    # This command will go through all the steps for creating the index
-    python indrops.py project.yaml build_index \
-        --genome-fasta-gz DOWNLOAD_DIR/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz \
-        --ensembl-gtf-gz DOWNLOAD_DIR/Mus_musculus.GRCm38.85.gtf.gz
-
+To generate a bowtie index with this transcriptome.
+   ```
+   bowtie-build Axolotl.Trinity.CellReports2017.fasta Axolotl.Trinity.CellReports2017.fasta
+   
+   ```
+   
 
 ### 1. Filter
 This iterates over sequencing run parts, optionally filtered by a list of sequencing parts, and a list of libraries of interest.
@@ -199,11 +165,12 @@ For each library, this collates the results of filtering all the sequencing run 
   - Summary table of filtering for that library
   - An index to be used by `sort`. 
 
+### This is where we diverge from the original inDrops processing pipeline!
 
 ### 3. Sort reads according to their barcode of origin.
 This iterates over parts of libraries, optionally filtered by a list.
 
-    python indrops.py project.yaml sort [--total-workers 1] [--worker-index 0]
+    python extract_barcoded_reads.py project.yaml sort [--total-workers 1] [--worker-index 0]
           [-l --libraries LIBRARIES]
 
     # --libraries comma-separated list of libraries :    If specified, step will be restricted to library-run-parts
@@ -221,7 +188,8 @@ As output, this creates a gzipped FastQ file and an index of the byte offsets fo
 ### 4. Quantify expression
 This iterates over a list of barcodes, from a list of optionally filtered libraries. 
 
-    python indrops.py project.yaml quantify [--total-workers 1] [--worker-index 0]
+    python extract_barcoded_reads.py project.yaml quantify --no-bam > barcoded_reads.fastq 
+            [--total-workers 1] [--worker-index 0]
             [-l --libraries LIBRARIES] [-r --runs RUNS ]
             [--min-reads 750] [--min-counts 0]
             [--analysis prefix '']
@@ -244,31 +212,40 @@ This iterates over a list of barcodes, from a list of optionally filtered librar
     # The resulting list of barcodes will be split among --total-workers, with worker identified by --worker-index.
     #    *Note* This step requires ~2Gb of memory. 
 
-The reads from every barcode are aligned using Bowtie, and quantified to UMIFM counts. The counts and quantification metrics are written to a single file per worker. 
-
-The alignment themselves are modified to include relevant metadata and written to a BAM file. This BAM file is converted from transcriptomic to genomic-coordinates using `rsem-tbam2gbam`, sorted and indexed using `samtools`. At the end of this process, the BAMs for all the barcodes that were processed by a worker are merged and indexed (using `samtools`).
-
 This step is resumable. If the same --analysis-prefix/--total-workers/--worker-index was previously running, another run will only quantify barcodes that were not previously quantified (or whose data was lost). To force requantification, delete files in /project_dir/library_dir/quant_dir/[prefix.]worker\*_[total_workers]\*
 
-### 5. Aggregate quantification results
-This iterates over a list of libraries
+## note, must make the read name unique:
+```
+encode_read_number_in_fastq.pl barcoded_reads.fastq > barcoded_reads.adj.fq
+```
 
-    python indrops.py project.yaml aggregate --total-workers 1
-            [-l --libraries LIBRARIES]
-            [--analysis prefix '']
+# align reads to target transcripts using bowtie:
+```
+bowtie target.fasta.bowtie -q -p 20 -a --best --strata --chunkmbs 1000 --sam -m 200 -n 1 -l 15 -e 100 barcoded_reads.adj.fq  >  target.bowtie.adj.sam
+```
+# generate count matrix:
+note: bam_to_count_matrix.pl can be modified to output more or less cells to the sc.counts.matrix file. This can be done by changing the value for max_top_cells. We expect about 3000 cells per library. 
 
-    # --total-workers INT :                             Total number of workers used in quantification step.
-    # --analysis-prefix STR :                           Look for quantification data files with specified prefix.
-    #                                                   (prefix.filename)
-    # 
-    # --libraries comma-separated list of libraries      If specified, step will be restricted to libraries
-    #                                                   in this list.
-    # 
-    # 
-    # The resulting list of libraries will be split among --total-workers, with worker identified by --worker-index.
+```
+bam_to_count_matrix.pl --bam target.bowtie.adj.sam > sc.counts.matrix
+```
+# annotate count matrix
+Trinity (https://github.com/trinityrnaseq/trinityrnaseq/wiki) has a nice perl script to take care of this for us, so download and install Trinity for these next few steps (we used Trinity v2.5.1). You should run these next two commands from within the Trinity codebase. The script we will use for annotation can be found here: https://github.com/trinityrnaseq/trinityrnaseq/blob/master/Analysis/DifferentialExpression/rename_matrix_feature_identifiers.pl 
 
-The UMIFM counts and quantification metrics from all workers are concatenated to single files. These files are gzipped.
-If existing, the BAMs from every worker are merged and indexed (using `samtools`)
+To perform the annotation, we need two things 1) the sc.counts.matrix and 2) an annotation mapping file for the transcriptome of interest. The annotation mapping file for the the Axolotl.Trinity.CellReports2017.fasta transcriptome is called Axo.Mar2014.Trinotate.xls.annot_mapping and is available above.
+
+```
+rename_matrix_feature_identifiers.pl sc.counts.matrix Axo.Mar2014.Trinotate.xls.annot_mapping > sc.counts.annotated.matrix
+```
+
+# create representative gene count matrix
+Since the transcriptome we used has a lot of isoforms, we collapsed these down to one representative isoform. Perl script can be found here: https://github.com/trinityrnaseq/trinityrnaseq/blob/master/util/misc/trinity_trans_matrix_to_rep_trans_gene_matrix.pl and again run from the Trinity codebase. 
+
+```
+trinity_trans_matrix_to_rep_trans_gene_matrix.pl sc.counts.annotated.matrix > sc.counts.annotated.matrix.repGene
+```
+
+This count matrix is now ready to go into an analysis software. We used Seurat (https://satijalab.org/seurat/) for our manuscript! 
 
 
 ## Appendix 1: Parallelizing the analysis steps
@@ -295,48 +272,7 @@ by specifying the total number of jobs (--total-workers) and the index of the cu
     # Submitting the 20 commands below would filter all run parts within the project in 20 different parts.
     python indrops.py test_project.yaml filter --total-workers 20 --worker-index [0-19]
 
-## Appendix 2: Using a custom Python environment on the Orchestra Cluster
-
-### How to use an existing environment
-
-#### Option 1 (simpler, but uglier):
-Using the example installed with the instructions below, in "/groups/klein/adrian/pyndrops”:
-
-    source /groups/klein/adrian/miniconda/bin/activate /groups/klein/adrian/pyndrops
-
-(To make this line shorter, prepend “ /groups/klein/adrian/miniconda/bin/“ to PATH.)
-
-The terminal should now be prepended with  (/groups/klein/adrian/pyndrops):  (/groups/klein/adrian/pyndrops)av79@loge:~$ (This is the ugly part)
-
-Check that the correct python executable is being used:
-
-    which python
-
-returns:
-
-    /groups/klein/adrian/pyndrops/bin/python
-
-Test that all packages can be imported:
-
-    python -c """import yaml; import pysam; import pyfasta; import numpy; import matplotlib; print('Nice work. All packages loaded correctly.')"""
-    # Should print :
-    # "Nice work. All packages loaded correctly.""
-
-#### Option 2 (slightly harder, but shorter prefix):
-Using the example above, installed in "/groups/klein/adrian/pyndrops”.
-This assumes you prepended “ /groups/klein/adrian/miniconda/bin/“ to PATH.
-
-Add “/groups/klein/adrian” as a place to search for python environments, with
-
-    conda config --add envs_dirs '/groups/klein/adrian/'
-
-Then, you only need
-
-    source activate pyndrops
-
-Run the same tests are above.
-
-Now, "python" should refer to this specific python installation!
+## Appendix 2: Using a custom Python environment on the a cluster
 
 ### How to install conda and create a new environment
 
