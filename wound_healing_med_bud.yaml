@@ -1,0 +1,45 @@
+project_name : 'AxoSC4_d2'
+project_dir : '/n/scratch2/nl91/indrops/inDrops4_06_04_18/180603_NL5680_NS500144_fastq'
+
+paths : 
+  bowtie_dir : ''
+  rsem_dir : ''
+  python_dir : ''
+  java_dir : ''
+  samtools_dir : ''
+  bowtie_index : '/n/scratch2/nl91/indrops/indrops_index/03_01_18_indrops'
+
+sequencing_runs :
+  - name :  'Seq4_2'
+    version: 'v3'
+    dir : '/n/scratch2/nl91/indrops/inDrops4_06_04_18/180603_NL5680_NS500144_fastq'
+    fastq_path : '20180603_pool_NL5680_S1_{read}_001.fastq.gz'
+    libraries: 
+    - {library_name: "N1", library_index: "CAGTTATG"}
+    - {library_name: "N2", library_index: "CCTTTACT"}
+    - {library_name: "N3", library_index: "GAGACGGA"}
+    - {library_name: "N4", library_index: "AGAAAGCT"}
+    - {library_name: "N5", library_index: "ACGCTCTT"}
+    - {library_name: "N6", library_index: "CGCATTCT"}    
+parameters : 
+  umi_quantification_arguments:
+    m : 10 #Ignore reads with more than M alignments, after filtering on distance from transcript end.
+    u : 2 #Ignore counts from UMI that should be split among more than U genes.
+    d : 600 #Maximal distance from transcript end, NOT INCLUDING THE POLYA TAIL
+    split-ambigs: False #If umi is assigned to m genes, add 1/m to each gene's count (instead of 1)
+    min_non_polyA: 15 #Require reads to align to this much non-polyA sequence. (Set to 0 to disable filtering on this parameter.)
+  output_arguments:
+    output_unaligned_reads_to_other_fastq: False
+    filter_alignments_to_softmasked_regions: False
+  bowtie_arguments:
+    m : 200
+    n : 1
+    l : 15
+    e : 100
+  trimmomatic_arguments:
+    LEADING: "28"
+    SLIDINGWINDOW: "4:20"
+    MINLEN: "16"
+    argument_order: ['LEADING', 'SLIDINGWINDOW', 'MINLEN']
+  low_complexity_filter_arguments:
+    max_low_complexity_fraction : 0.50

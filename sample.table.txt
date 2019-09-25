@@ -1,0 +1,23 @@
+Contained in	Contains	Sample ID	Timpoint + Replicate	Demultiplexing Sequence	Timepoint (name)	Replicate #
+SRR8147022-SRR8147025	Early and Medium bud
+		S1	23dpa1	CTATTAAG	Medium_bud	1
+		S2	23dpa2	AAGGCTAT	Medium_bud	2
+		S3	14dpa1	GAGCCTTA	Early_bud	1
+		S4	23dpa3	TTATGCGA	Medium_bud	3
+		S5	14dpa2	GGAGGTAA	Early_bud	2
+
+SRR8147026-SRR8147029	Wound healing and Medium bud
+		N1	23dpa4	CATAACTG	Medium_bud	4
+		N2	23dpa5	AGTAAAGG	Medium_bud	5
+		N3	23dpa6	TCCGTCTC	Medium_bud	6
+		N4	3dpa1	AGCTTTCT	Wound_healing	1
+		N5	3dpa2	AAGAGCGT	Wound_healing	2
+		N6	3dpa3	AGAATGCG	Wound_healing	3
+
+SRR8147030-SRR8147033	Intact and Contralateral
+		S1	intact1	TCTCTCCG	Intact	1
+		S2	intact2	TCGACTAG	Intact	2
+		S3	contralateral	TTCTAGCT	Contralateral	1
+		S4	contralateral	CCTAGAGT	Contralateral	2
+		S5	contralateral	GCGTAAGA	Contralateral	3
+
