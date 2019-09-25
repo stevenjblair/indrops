@@ -10,7 +10,7 @@ The same project can contain runs from different versions of the inDrops platfor
 
 A project will be aligned against the same reference genome with the same alignment parameters. 
 
-We have provided the yaml files used for this paper above. They are named "Early_med_bud.yaml" and this yaml file should be used for fastq #'s SRR8147022-SRR8147025. yaml file wound_healing_med_bud.yaml should be used with SRR8147026-SRR8147029. Finally, intact_and_contralateral.yaml should be used for SRR8147030-SRR8147033. These fastq's can all be found here: https://www.ncbi.nlm.nih.gov/sra?term=SRP167700. Once you have downloaded the files, it's important to rename each file so that it is compatible with the yaml files. The fastq's should have a structure like (note you don't need to call it Undetermined):
+We have provided the yaml files used for this paper above, though you will need to modify them for your own use (i.e. change paths). They are named "Early_med_bud.yaml" and this yaml file should be used for fastq #'s SRR8147022-SRR8147025. yaml file wound_healing_med_bud.yaml should be used with SRR8147026-SRR8147029. Finally, intact_and_contralateral.yaml should be used for SRR8147030-SRR8147033. These fastq's can all be found here: https://www.ncbi.nlm.nih.gov/sra?term=SRP167700. Once you have downloaded the files, it's important to rename each file so that it is compatible with the yaml files. The fastq's should have a structure like (note you don't need to call it Undetermined):
 
 Undetermined_S0_{split_affix}_{read}_001.fastq.gz
 
