@@ -21,7 +21,7 @@ You must deteremine which read the fastq file is associated with and then rename
 3. 8bp Index Read 2 (i5)   library index
 4. 14bp Read 2             part 2 cell barcode (8bp) / UMI (6bp) / Poly T
 
-A table has been provided above further describing where to find each of the biological replicates within the fastq's deposited on SRA. It is important to note that each SRR number does NOT correlate with one sample. For example, SRR8147025 has reads from early and medium bud blastemas (see table), but only contains ONE read. Therefore, you will need all fastq's (SRR8147022-SRR8147025) to obatin all 4 reads for running the pipeline. When running the yaml file these will be demultiplexed.
+A table has been provided above further describing where to find each of the biological replicates within the fastq's deposited on SRA. It is important to note that each SRR number does NOT correlate with one sample. For example, SRR8147025 has reads from early and medium bud blastemas (see sample.table.txt above), but only contains ONE read. Therefore, you will need all fastq's (SRR8147022-SRR8147025) to obatin all 4 reads for running the pipeline. When running the yaml file these will be demultiplexed.
 
 ## Supported library versions
    - v1 : original design where R2 is the biological read and R1 is the metadata read. 
