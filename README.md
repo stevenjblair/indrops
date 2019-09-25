@@ -10,9 +10,11 @@ The same project can contain runs from different versions of the inDrops platfor
 
 A project will be aligned against the same reference genome with the same alignment parameters. 
 
-We have provided the yaml files used for this paper above, though you will need to modify them for your own use (i.e. change paths). They are named "Early_med_bud.yaml" and this yaml file should be used for fastq #'s SRR8147022-SRR8147025. yaml file wound_healing_med_bud.yaml should be used with SRR8147026-SRR8147029. Finally, intact_and_contralateral.yaml should be used for SRR8147030-SRR8147033. These fastq's can all be found here: https://www.ncbi.nlm.nih.gov/sra?term=SRP167700. Once you have downloaded the files, it's important to rename each file so that it is compatible with the yaml files. The fastq's should have a structure like (note you don't need to call it Undetermined):
+We have provided the yaml files used for this paper above, though you will need to modify them for your own use (i.e. change paths). They are named "Early_med_bud.yaml" and this yaml file should be used for fastq #'s SRR8147022-SRR8147025. yaml file wound_healing_med_bud.yaml should be used with SRR8147026-SRR8147029. Finally, intact_and_contralateral.yaml should be used for SRR8147030-SRR8147033. These fastq's can all be found here: https://www.ncbi.nlm.nih.gov/sra?term=SRP167700. Once you have downloaded the files, it's important to rename each file so that it is compatible with the yaml files. The fastq's should have a structure like:
 
 Undetermined_S0_{split_affix}_{read}_001.fastq.gz
+
+(note: you don't need to call it Undetermined)
 
 You must deteremine which read the fastq file is associated with and then rename files adding the appropriate read information into {read}. Manual inspection of the SRR downloads should allow for confirmation of read. Read structure is as follows:
 
@@ -21,7 +23,7 @@ You must deteremine which read the fastq file is associated with and then rename
 3. 8bp Index Read 2 (i5)   library index
 4. 14bp Read 2             part 2 cell barcode (8bp) / UMI (6bp) / Poly T
 
-A table has been provided above further describing where to find each of the biological replicates within the fastq's deposited on SRA. It is important to note that each SRR number does NOT correlate with one sample. For example, SRR8147025 has reads from early and medium bud blastemas (see sample.table.txt above), but only contains ONE read. Therefore, you will need all fastq's (SRR8147022-SRR8147025) to obatin all 4 reads for running the pipeline. When running the yaml file these will be demultiplexed.
+A table has been provided above further describing where to find each of the biological replicates within the fastq's deposited on SRA. It is important to note that each SRR number does NOT correlate with one sample. For example, SRR8147025 has reads from early- and medium- bud blastemas (see sample.table.txt above), but only contains ONE read. Therefore, you will need all fastq's (SRR8147022-SRR8147025) to obatin all 4 reads for running the pipeline. When running the yaml file these will be demultiplexed.
 
 ## Supported library versions
    - v1 : original design where R2 is the biological read and R1 is the metadata read. 
