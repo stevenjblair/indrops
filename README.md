@@ -10,20 +10,28 @@ The same project can contain runs from different versions of the inDrops platfor
 
 A project will be aligned against the same reference genome with the same alignment parameters. 
 
-We have provided the yaml files used for this paper above, though you will need to modify them for your own use (i.e. change paths). They are named "Early_med_bud.yaml" and this yaml file should be used for fastq #'s SRR8147022-SRR8147025 (containing biological replicates 1-3 of medium-bud and 1-2 of early-bud blastemas). yaml file wound_healing_med_bud.yaml should be used with SRR8147026-SRR8147029 (containing biological replicates 4-6 of medium-bud blastemas and 1-3 of wound healing stage). Finally, intact_and_contralateral.yaml should be used for SRR8147030-SRR8147033 (containing biological replicates 1-2 of intact and 1-3 of contralateral). These fastq's can all be found here: https://www.ncbi.nlm.nih.gov/sra?term=SRP167700. Once you have downloaded the files, it's important to rename each file so that it is compatible with the yaml files. The fastq's should have a structure like:
+We have provided the yaml files used for this paper above, though you will need to modify them for your own use (i.e. change paths). They are named "Early_med_bud.yaml" and this yaml file should be used for fastq #'s SRR8147022-SRR8147025 (containing biological replicates 1-3 of medium-bud and 1-2 of early-bud blastemas). yaml file wound_healing_med_bud.yaml should be used with SRR8147026-SRR8147029 (containing biological replicates 4-6 of medium-bud blastemas and 1-3 of wound healing stage). Finally, intact_and_contralateral.yaml should be used for SRR8147030-SRR8147033 (containing biological replicates 1-2 of intact and 1-3 of contralateral). 
 
-Undetermined_S0_{split_affix}_{read}_001.fastq.gz
+## Important information for downloading and using SRA data
 
-(note: you don't need to call it Undetermined)
+All fastq files associated with Leigh et al. PMID 30514844 can all be found here: https://www.ncbi.nlm.nih.gov/sra?term=SRP167700. To download the files, it's essential that you use the fastq-dump --split-files command so that all 4 Reads are separated. When you download, for example, SRR8147022 (which contains early- and medium-bud samples) this is going to give you 4 Reads. You will also need to download SRR8147023, SRR8147024, and SRR8147025 (again all using --split-files) to yield 16 total fastq files associated with the the early- and medium-bud samples. These 16 fastq files will be four from Read 1, four from Read 2, four from Read 3, and four from Read 4. 
 
-You must deteremine which read the fastq file is associated with and then rename files adding the appropriate read information into {read}. Manual inspection of the SRR downloads should allow for confirmation of read. Read structure is as follows:
+It should be that SRR8147022_1.fastq = Read 1, SRR8147022_2.fastq = Read 2, SRR8147022_3.fastq = Read 3, and SRR8147022_4.fastq = Read 4. However, manual inspection of the SRR downloads should allow for confirmation of appropriate read number. Read structure is as follows:
 
 1. 61bp Read 1             transcript
 2. 8bp Index Read 1 (i7)   8bp part 1 single cell barcode
 3. 8bp Index Read 2 (i5)   library index
 4. 14bp Read 2             part 2 cell barcode (8bp) / UMI (6bp) / Poly T
 
-A table has been provided above further describing where to find each of the biological replicates within the fastq's deposited on SRA. It is important to note that each SRR number does NOT correlate with one sample. For example, SRR8147025 has reads from early- and medium- bud blastemas (see sample.table.txt above), but only contains ONE read. Therefore, you will need all fastq's (SRR8147022-SRR8147025) to obatin all 4 reads for running the pipeline. When running pipeline the yaml file will demultiplex these samples.
+You can use the library index to determine the difference between i7 and i5 reads. The other two will be clear based on the length information in the fastq file. 
+
+Finally, you will need to combine all Read 1 files to make one fastq file for Read 1. The same should be done for Read 2, Read 3, and Read 4. So you'll have gone from 16 fastq files (4 of each Read) to four files one FOR each read. At this point you'll want to rename the files so that they are compatible with your yaml. This should be something like:
+
+SRR8147022_{read}.fastq 
+
+Where {read} is either R1, R1, R3, or R4, as appropriate.
+
+A table has been provided above further describing where to find each of the biological replicates within the fastq's deposited on SRA. It is important to note that each SRR number does NOT correlate with one sample. For example, SRR8147022 has reads from early- and medium- bud blastemas (see sample.table.txt above). You will need all fastq's (SRR8147022-SRR8147025) to obatin all 4 Reads for running the pipeline (as described above). When running pipeline the yaml file will demultiplex these samples.
 
 ## Supported library versions
    - v1 : original design where R2 is the biological read and R1 is the metadata read. 
