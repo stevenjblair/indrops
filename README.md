@@ -1,4 +1,6 @@
-** Note, this is forked from [https://github.com/indrops/indrops](https://github.com/indrops/indrops) ** and was modified for our use.
+** Note this is a fork of a fork originally from http://github.com/indrops/indrops and modified for use by http://github.com/brianjohnhass/indrops ** and is the perfect starting point to be modified for our use.
+
+If you see http://github.com/brianjohnhass please offer him a beer for me.
 
 ## Project YAML file.
 
